@@ -61,7 +61,10 @@
 <h1>18 Minute Method</h1>
 <div id="timer">18:00</div>
 <button id="startBtn">Start</button>
+<button id="pauseBtn">Pause</button>
 <button id="resetBtn">Reset</button>
+<br>
+<a href="log.html" style="display:inline-block; margin-top:15px; color:#f4a300; text-decoration:none; border:1px solid #f4a300; padding:8px 16px; border-radius:6px;">View All Past Entries</a>
 
 <div id="promptBox">
   <p>Time's up! What did you just work on?</p>
@@ -72,57 +75,45 @@
 <div id="log"></div>
 
 <script>
-  // ---- 1. Set up starting values ----
-  // totalSeconds = 18 minutes converted to seconds (18 * 60)
   let totalSeconds = 18 * 60;
-  // timerInterval will hold our repeating timer, so we can stop it later
   let timerInterval = null;
 
-  // ---- 2. Grab references to the HTML elements we need to control ----
-  // document.getElementById() finds an element by its "id" attribute
   const timerDisplay = document.getElementById('timer');
   const startBtn = document.getElementById('startBtn');
+  const pauseBtn = document.getElementById('pauseBtn');
   const resetBtn = document.getElementById('resetBtn');
   const promptBox = document.getElementById('promptBox');
   const logInput = document.getElementById('logInput');
   const saveBtn = document.getElementById('saveBtn');
   const logDiv = document.getElementById('log');
 
-  // ---- 3. Function to update what the timer LOOKS like on screen ----
   function updateDisplay() {
-    // Math.floor() rounds DOWN to a whole number
-    // totalSeconds / 60 gives us minutes, we drop the decimal
     const minutes = Math.floor(totalSeconds / 60);
-    // % is "modulo" - it gives the REMAINDER after dividing
-    // this gives us the leftover seconds after removing full minutes
     const seconds = totalSeconds % 60;
-    // padStart(2, '0') forces single digits to show as "05" instead of "5"
     timerDisplay.textContent =
       String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
   }
 
-  // ---- 4. Function that runs every single second while timer is active ----
   function tick() {
-    totalSeconds--; // same as: totalSeconds = totalSeconds - 1
+    totalSeconds--;
     updateDisplay();
-
-    // once we hit zero, stop and show the prompt
     if (totalSeconds <= 0) {
-      clearInterval(timerInterval); // stops the repeating tick() calls
-      promptBox.style.display = 'block'; // reveals the "what did you do" box
+      clearInterval(timerInterval);
+      promptBox.style.display = 'block';
     }
   }
 
-  // ---- 5. What happens when you click "Start" ----
   startBtn.addEventListener('click', function() {
-    // setInterval runs tick() every 1000 milliseconds (1 second), forever,
-    // until we call clearInterval on it
-    if (!timerInterval) { // prevents starting multiple timers at once
+    if (!timerInterval) {
       timerInterval = setInterval(tick, 1000);
     }
   });
 
-  // ---- 6. What happens when you click "Reset" ----
+  pauseBtn.addEventListener('click', function() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  });
+
   resetBtn.addEventListener('click', function() {
     clearInterval(timerInterval);
     timerInterval = null;
@@ -131,37 +122,28 @@
     promptBox.style.display = 'none';
   });
 
-  // ---- 7. What happens when you click "Save" after the prompt appears ----
   saveBtn.addEventListener('click', function() {
-    const entryText = logInput.value; // grabs whatever you typed
-    if (entryText.trim() === '') return; // ignore empty submissions
+    const entryText = logInput.value;
+    if (entryText.trim() === '') return;
 
-    // create a new div to display this log entry
     const entry = document.createElement('div');
     entry.className = 'entry';
 
-    // toLocaleTimeString() gives a readable time like "3:42:10 PM"
-    const now = new Date().toLocaleTimeString();
+    const now = new Date().toLocaleString();
     entry.textContent = now + ' — ' + entryText;
 
-    // prepend = add to the TOP of the log, so newest is always first
     logDiv.prepend(entry);
-
-    // save to localStorage so entries survive a page refresh
     saveLogToStorage(now, entryText);
 
-    // reset everything for the next 18-minute block
     logInput.value = '';
     promptBox.style.display = 'none';
     totalSeconds = 18 * 60;
     updateDisplay();
   });
 
-  // ---- 8. Saving/loading entries so they persist between visits ----
   function saveLogToStorage(time, text) {
-    // localStorage only stores strings, so we convert our data to JSON text
     const existing = JSON.parse(localStorage.getItem('eighteenMinLog') || '[]');
-    existing.unshift({ time: time, text: text }); // add newest to the front
+    existing.unshift({ time: time, text: text });
     localStorage.setItem('eighteenMinLog', JSON.stringify(existing));
   }
 
@@ -175,9 +157,8 @@
     });
   }
 
-  // ---- 9. Run once when the page first loads ----
-  updateDisplay();       // show "18:00" immediately instead of blank
-  loadLogFromStorage();  // bring back any past entries you saved before
+  updateDisplay();
+  loadLogFromStorage();
 </script>
 
 </body>
