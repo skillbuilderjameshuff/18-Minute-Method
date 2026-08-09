@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>18 Minute Method</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #1a1a2e;
+    color: #eee;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  h1 { color: #f4a300; }
+  #timer {
+    font-size: 64px;
+    margin: 20px 0;
+  }
+  button {
+    background: #f4a300;
+    border: none;
+    padding: 12px 24px;
+    font-size: 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin: 5px;
+  }
+  button:hover { background: #d98e00; }
+  #promptBox {
+    display: none;
+    margin-top: 20px;
+    background: #22223b;
+    padding: 20px;
+    border-radius: 10px;
+  }
+  textarea {
+    width: 80%;
+    height: 60px;
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 6px;
+    border: none;
+  }
+  #log {
+    margin-top: 30px;
+    text-align: left;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .entry {
+    background: #22223b;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+  }
+</style>
+</head>
+<body>
+
+<h1>18 Minute Method</h1>
+<div id="timer">18:00</div>
+<button id="startBtn">Start</button>
+<button id="resetBtn">Reset</button>
+
+<div id="promptBox">
+  <p>Time's up! What did you just work on?</p>
+  <textarea id="logInput" placeholder="What did you do in those 18 minutes?"></textarea><br>
+  <button id="saveBtn">Save</button>
+</div>
+
+<div id="log"></div>
+
+<script>
+  // ---- 1. Set up starting values ----
+  // totalSeconds = 18 minutes converted to seconds (18 * 60)
+  let totalSeconds = 18 * 60;
+  // timerInterval will hold our repeating timer, so we can stop it later
+  let timerInterval = null;
+
+  // ---- 2. Grab references to the HTML elements we need to control ----
+  // document.getElementById() finds an element by its "id" attribute
+  const timerDisplay = document.getElementById('timer');
+  const startBtn = document.getElementById('startBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const promptBox = document.getElementById('promptBox');
+  const logInput = document.getElementById('logInput');
+  const saveBtn = document.getElementById('saveBtn');
+  const logDiv = document.getElementById('log');
+
+  // ---- 3. Function to update what the timer LOOKS like on screen ----
+  function updateDisplay() {
+    // Math.floor() rounds DOWN to a whole number
+    // totalSeconds / 60 gives us minutes, we drop the decimal
+    const minutes = Math.floor(totalSeconds / 60);
+    // % is "modulo" - it gives the REMAINDER after dividing
+    // this gives us the leftover seconds after removing full minutes
+    const seconds = totalSeconds % 60;
+    // padStart(2, '0') forces single digits to show as "05" instead of "5"
+    timerDisplay.textContent =
+      String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+  }
+
+  // ---- 4. Function that runs every single second while timer is active ----
+  function tick() {
+    totalSeconds--; // same as: totalSeconds = totalSeconds - 1
+    updateDisplay();
+
+    // once we hit zero, stop and show the prompt
+    if (totalSeconds <= 0) {
+      clearInterval(timerInterval); // stops the repeating tick() calls
+      promptBox.style.display = 'block'; // reveals the "what did you do" box
+    }
+  }
+
+  // ---- 5. What happens when you click "Start" ----
+  startBtn.addEventListener('click', function() {
+    // setInterval runs tick() every 1000 milliseconds (1 second), forever,
+    // until we call clearInterval on it
+    if (!timerInterval) { // prevents starting multiple timers at once
+      timerInterval = setInterval(tick, 1000);
+    }
+  });
+
+  // ---- 6. What happens when you click "Reset" ----
+  resetBtn.addEventListener('click', function() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    totalSeconds = 18 * 60;
+    updateDisplay();
+    promptBox.style.display = 'none';
+  });
+
+  // ---- 7. What happens when you click "Save" after the prompt appears ----
+  saveBtn.addEventListener('click', function() {
+    const entryText = logInput.value; // grabs whatever you typed
+    if (entryText.trim() === '') return; // ignore empty submissions
+
+    // create a new div to display this log entry
+    const entry = document.createElement('div');
+    entry.className = 'entry';
+
+    // toLocaleTimeString() gives a readable time like "3:42:10 PM"
+    const now = new Date().toLocaleTimeString();
+    entry.textContent = now + ' — ' + entryText;
+
+    // prepend = add to the TOP of the log, so newest is always first
+    logDiv.prepend(entry);
+
+    // save to localStorage so entries survive a page refresh
+    saveLogToStorage(now, entryText);
+
+    // reset everything for the next 18-minute block
+    logInput.value = '';
+    promptBox.style.display = 'none';
+    totalSeconds = 18 * 60;
+    updateDisplay();
+  });
+
+  // ---- 8. Saving/loading entries so they persist between visits ----
+  function saveLogToStorage(time, text) {
+    // localStorage only stores strings, so we convert our data to JSON text
+    const existing = JSON.parse(localStorage.getItem('eighteenMinLog') || '[]');
+    existing.unshift({ time: time, text: text }); // add newest to the front
+    localStorage.setItem('eighteenMinLog', JSON.stringify(existing));
+  }
+
+  function loadLogFromStorage() {
+    const existing = JSON.parse(localStorage.getItem('eighteenMinLog') || '[]');
+    existing.forEach(function(item) {
+      const entry = document.createElement('div');
+      entry.className = 'entry';
+      entry.textContent = item.time + ' — ' + item.text;
+      logDiv.appendChild(entry);
+    });
+  }
+
+  // ---- 9. Run once when the page first loads ----
+  updateDisplay();       // show "18:00" immediately instead of blank
+  loadLogFromStorage();  // bring back any past entries you saved before
+</script>
+
+</body>
+</html>
