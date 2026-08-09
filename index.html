@@ -128,6 +128,7 @@
   startBtn.addEventListener('click', function() {
     if (!timerInterval) {
       endTime = Date.now() + (pausedSecondsRemaining * 1000);
+      localStorage.setItem('eighteenMinEndTime', String(endTime));
       timerInterval = setInterval(tick, 250);
       tick();
     }
@@ -138,6 +139,7 @@
       pausedSecondsRemaining = Math.max(0, Math.round((endTime - Date.now()) / 1000));
       clearInterval(timerInterval);
       timerInterval = null;
+      localStorage.removeItem('eighteenMinEndTime');
     }
   });
 
@@ -147,6 +149,7 @@
     pausedSecondsRemaining = TOTAL_DURATION;
     updateDisplay(TOTAL_DURATION);
     promptBox.style.display = 'none';
+    localStorage.removeItem('eighteenMinEndTime');
   });
 
   saveBtn.addEventListener('click', function() {
@@ -166,6 +169,7 @@
     promptBox.style.display = 'none';
     pausedSecondsRemaining = TOTAL_DURATION;
     updateDisplay(TOTAL_DURATION);
+    localStorage.removeItem('eighteenMinEndTime');
   });
 
   function saveLogToStorage(time, text) {
@@ -186,6 +190,21 @@
 
   updateDisplay(TOTAL_DURATION);
   loadLogFromStorage();
+
+  const savedEndTime = localStorage.getItem('eighteenMinEndTime');
+  if (savedEndTime) {
+    const savedEndTimeNum = Number(savedEndTime);
+    const secondsLeft = Math.round((savedEndTimeNum - Date.now()) / 1000);
+    if (secondsLeft > 0) {
+      endTime = savedEndTimeNum;
+      timerInterval = setInterval(tick, 250);
+      tick();
+    } else {
+      updateDisplay(0);
+      promptBox.style.display = 'block';
+      localStorage.removeItem('eighteenMinEndTime');
+    }
+  }
 
   document.addEventListener('visibilitychange', function() {
     if (document.visibilityState === 'visible' && timerInterval) {
