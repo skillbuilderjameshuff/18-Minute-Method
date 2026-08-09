@@ -56,6 +56,36 @@
     margin-bottom: 8px;
   }
 
+  #starRating {
+    font-size: 32px;
+    margin: 10px 0;
+  }
+  .star {
+    cursor: pointer;
+    color: #555;
+    padding: 0 3px;
+    transition: color 0.15s;
+  }
+  .star.selected {
+    color: #f4a300;
+  }
+
+  #moodPicker {
+    font-size: 28px;
+    margin: 10px 0;
+  }
+  .mood {
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 8px;
+    opacity: 0.5;
+    transition: opacity 0.15s, background 0.15s;
+  }
+  .mood.selected {
+    opacity: 1;
+    background: #33334d;
+  }
+
   @media (max-width: 500px) {
     body {
       padding: 20px 15px;
@@ -87,6 +117,23 @@
 <div id="promptBox">
   <p>Time's up! What did you just work on?</p>
   <textarea id="logInput" placeholder="What did you do in those 18 minutes?"></textarea><br>
+
+  <p>Did you enjoy the time spent?</p>
+  <div id="starRating">
+    <span class="star" data-value="1">☆</span>
+    <span class="star" data-value="2">☆</span>
+    <span class="star" data-value="3">☆</span>
+    <span class="star" data-value="4">☆</span>
+    <span class="star" data-value="5">☆</span>
+  </div>
+
+  <p>How was your mood?</p>
+  <div id="moodPicker">
+    <span class="mood" data-mood="green">🟢🙂</span>
+    <span class="mood" data-mood="yellow">🟡😐</span>
+    <span class="mood" data-mood="red">🔴☹️</span>
+  </div>
+
   <button id="saveBtn">Save</button>
 </div>
 
@@ -106,6 +153,35 @@
   const logInput = document.getElementById('logInput');
   const saveBtn = document.getElementById('saveBtn');
   const logDiv = document.getElementById('log');
+
+  const starEls = document.querySelectorAll('.star');
+  const moodEls = document.querySelectorAll('.mood');
+  let selectedRating = 0;
+  let selectedMood = null;
+
+  starEls.forEach(function(star) {
+    star.addEventListener('click', function() {
+      selectedRating = Number(star.getAttribute('data-value'));
+      starEls.forEach(function(s) {
+        const sValue = Number(s.getAttribute('data-value'));
+        if (sValue <= selectedRating) {
+          s.textContent = '★';
+          s.classList.add('selected');
+        } else {
+          s.textContent = '☆';
+          s.classList.remove('selected');
+        }
+      });
+    });
+  });
+
+  moodEls.forEach(function(mood) {
+    mood.addEventListener('click', function() {
+      selectedMood = mood.getAttribute('data-mood');
+      moodEls.forEach(function(m) { m.classList.remove('selected'); });
+      mood.classList.add('selected');
+    });
+  });
 
   function updateDisplay(secondsToShow) {
     const minutes = Math.floor(secondsToShow / 60);
@@ -160,21 +236,34 @@
     entry.className = 'entry';
 
     const now = new Date().toLocaleString();
-    entry.textContent = now + ' — ' + entryText;
+
+    const ratingText = selectedRating > 0 ? '★'.repeat(selectedRating) + '☆'.repeat(5 - selectedRating) : 'No rating';
+    const moodEmoji = { green: '🟢', yellow: '🟡', red: '🔴' }[selectedMood] || '';
+
+    entry.textContent = now + ' — ' + entryText + '  |  ' + ratingText + '  ' + moodEmoji;
 
     logDiv.prepend(entry);
-    saveLogToStorage(now, entryText);
+
+    saveLogToStorage(now, entryText, selectedRating, selectedMood);
 
     logInput.value = '';
     promptBox.style.display = 'none';
     pausedSecondsRemaining = TOTAL_DURATION;
     updateDisplay(TOTAL_DURATION);
     localStorage.removeItem('eighteenMinEndTime');
+
+    selectedRating = 0;
+    selectedMood = null;
+    starEls.forEach(function(s) {
+      s.textContent = '☆';
+      s.classList.remove('selected');
+    });
+    moodEls.forEach(function(m) { m.classList.remove('selected'); });
   });
 
-  function saveLogToStorage(time, text) {
+  function saveLogToStorage(time, text, rating, mood) {
     const existing = JSON.parse(localStorage.getItem('eighteenMinLog') || '[]');
-    existing.unshift({ time: time, text: text });
+    existing.unshift({ time: time, text: text, rating: rating, mood: mood });
     localStorage.setItem('eighteenMinLog', JSON.stringify(existing));
   }
 
@@ -183,7 +272,9 @@
     existing.forEach(function(item) {
       const entry = document.createElement('div');
       entry.className = 'entry';
-      entry.textContent = item.time + ' — ' + item.text;
+      const ratingText = item.rating > 0 ? '★'.repeat(item.rating) + '☆'.repeat(5 - item.rating) : '';
+      const moodEmoji = { green: '🟢', yellow: '🟡', red: '🔴' }[item.mood] || '';
+      entry.textContent = item.time + ' — ' + item.text + (ratingText ? '  |  ' + ratingText : '') + '  ' + moodEmoji;
       logDiv.appendChild(entry);
     });
   }
