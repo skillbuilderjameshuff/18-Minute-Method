@@ -68,8 +68,15 @@
 
       const textNode = document.createTextNode(item.text);
 
+      const ratingText = item.rating > 0 ? '★'.repeat(item.rating) + '☆'.repeat(5 - item.rating) : '';
+      const moodEmoji = { green: '🟢', yellow: '🟡', red: '🔴' }[item.mood] || '';
+      const extraText = document.createTextNode(
+        (ratingText ? '  |  ' + ratingText : '') + (moodEmoji ? '  ' + moodEmoji : '')
+      );
+
       entry.appendChild(timeSpan);
       entry.appendChild(textNode);
+      entry.appendChild(extraText);
       logDiv.appendChild(entry);
     });
   }
