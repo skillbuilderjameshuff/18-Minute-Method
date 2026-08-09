@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>18 Minute Method — All Entries</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #1a1a2e;
+    color: #eee;
+    padding: 40px 20px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  h1 { color: #f4a300; text-align: center; }
+  a.back {
+    display: inline-block;
+    margin-bottom: 20px;
+    color: #f4a300;
+    text-decoration: none;
+    border: 1px solid #f4a300;
+    padding: 8px 16px;
+    border-radius: 6px;
+  }
+  .entry {
+    background: #22223b;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+  }
+  .entry .time {
+    color: #f4a300;
+    font-size: 13px;
+    display: block;
+    margin-bottom: 4px;
+  }
+  #empty {
+    text-align: center;
+    color: #888;
+    margin-top: 40px;
+  }
+</style>
+</head>
+<body>
+
+<a class="back" href="index.html">&larr; Back to Timer</a>
+<h1>All Past Entries</h1>
+<div id="log"></div>
+<p id="empty" style="display:none;">No entries saved yet — go finish an 18-minute block first!</p>
+
+<script>
+  const logDiv = document.getElementById('log');
+  const emptyMsg = document.getElementById('empty');
+
+  const existing = JSON.parse(localStorage.getItem('eighteenMinLog') || '[]');
+
+  if (existing.length === 0) {
+    emptyMsg.style.display = 'block';
+  } else {
+    existing.forEach(function(item) {
+      const entry = document.createElement('div');
+      entry.className = 'entry';
+
+      const timeSpan = document.createElement('span');
+      timeSpan.className = 'time';
+      timeSpan.textContent = item.time;
+
+      const textNode = document.createTextNode(item.text);
+
+      entry.appendChild(timeSpan);
+      entry.appendChild(textNode);
+      logDiv.appendChild(entry);
+    });
+  }
+</script>
+
+</body>
+</html>
